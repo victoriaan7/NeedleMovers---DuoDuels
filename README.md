@@ -14,7 +14,7 @@ All players, squads and scores are **demo data**. There is no login, backend, da
 
 **Word Vault** shows a Spanish word and the player *types* a synonym. The chain starts at *feliz*, and each correct answer becomes the next prompt, four times in a row. Every accepted answer is curated in `game.js` with a rarity: common (100 pts), uncommon (150) or rare (250). Every correct answer in a row adds a combo bonus (+50, +100, +150). Accents are optional and feminine or plural forms count (*contenta*, *alegres*). Common wrong guesses like *triste* or *sensible* get a short explanation. A wrong answer lets you retry without losing points but resets the combo. A hint shows the first letter of an unused word and also resets the combo.
 
-**Hidden Connections** asks you to sort 16 Spanish words into 4 hidden groups (Animals, Fruits, Colors, False friends). Each solved group is worth 100 pts. If you finish, each unused mistake (4 allowed) adds +50. The hint shows one category and one word in it, and lowers the maximum reward by 150 pts. The live **💎 max** badge shows the best you can still earn.
+**Hidden Connections** asks you to sort 16 Spanish words into 4 hidden groups (Animals, Fruits, Colors, False friends). Each solved group is worth 100 pts. If you finish, each unused mistake (4 allowed) adds +50. The hint shows one category and one word in it, and lowers the maximum reward by 150 pts. The live **max** gem badge shows the best you can still earn.
 
 **Gems:** 10 points = 1 gem. Gems go to your personal total *and* the squad chest.
 
