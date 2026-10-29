@@ -5,20 +5,17 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>DuoDuel</title>
   <meta name="description" content="DuoDuel: two quick Spanish word games that power a squad gem chest. Case competition prototype.">
-  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>💎</text></svg>">
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'><path d='M6 2h12l5 7-11 13L1 9z' fill='%2358cc02'/></svg>">
   <link rel="stylesheet" href="style.css">
 </head>
 <body data-screen="hub">
 
   <!-- Top bar: visible on the hub and results screens -->
   <header class="topbar">
-    <button class="brand" data-home aria-label="DuoDuel home">
-      <span class="brand-mark" aria-hidden="true">⚔️</span>
-      <span class="brand-name">DuoDuel</span>
-    </button>
+    <button class="brand" data-home aria-label="DuoDuel home">duoduel</button>
     <div class="stats">
-      <span class="stat-pill streak" id="streakPill" title="Day streak">🔥 <b id="streakCount">0</b></span>
-      <span class="stat-pill gems" title="Your personal gems">💎 <b id="gemCount">0</b></span>
+      <span class="stat-pill streak" id="streakPill" title="Day streak"><i class="ico-flame"></i><b id="streakCount">0</b></span>
+      <span class="stat-pill gems" title="Your personal gems"><i class="ico-gem"></i><b id="gemCount">0</b></span>
     </div>
   </header>
 
@@ -27,29 +24,26 @@
     <!-- ============ HUB ============ -->
     <section id="hub" class="screen">
       <div class="hub-hero">
-        <div class="mascot" aria-hidden="true">🦉</div>
-        <div>
-          <h1>Pick your duel</h1>
-          <p class="muted" id="streakNote"></p>
-        </div>
+        <h1>Pick a game</h1>
+        <p class="muted" id="streakNote"></p>
       </div>
 
       <div class="game-cards">
         <button class="game-card card-vault" data-start="wordVault">
-          <span class="game-icon" aria-hidden="true">🗝️</span>
+          <span class="game-icon icon-vault" aria-hidden="true">Aa</span>
           <span class="game-text">
             <span class="game-title">Word Vault</span>
-            <span class="game-desc">Build a 4-step synonym chain from <i>feliz</i>. Rarer words = more gems.</span>
+            <span class="game-desc">Type synonyms to build a chain from <i>feliz</i>. Rarer words earn more gems.</span>
             <span class="game-best" id="bestWordVault"></span>
           </span>
           <span class="game-go">Play</span>
         </button>
 
         <button class="game-card card-connect" data-start="connections">
-          <span class="game-icon" aria-hidden="true">🧩</span>
+          <span class="game-icon icon-grid" aria-hidden="true"><i></i><i></i><i></i><i></i></span>
           <span class="game-text">
             <span class="game-title">Hidden Connections</span>
-            <span class="game-desc">Sort 16 Spanish words into 4 secret groups. Fewer mistakes = more gems.</span>
+            <span class="game-desc">Sort 16 Spanish words into 4 secret groups. Fewer mistakes earn more gems.</span>
             <span class="game-best" id="bestConnections"></span>
           </span>
           <span class="game-go">Play</span>
@@ -69,21 +63,39 @@
       <div class="game-head">
         <button class="close-btn" data-home aria-label="Back to hub">✕</button>
         <div class="progress"><div class="progress-fill" id="wvProgress"></div></div>
-        <span class="combo" id="wvCombo">Combo ×0</span>
+        <span class="pill-stat combo" id="wvCombo">Combo 0x</span>
       </div>
 
       <div class="game-body">
-        <p class="eyebrow">🗝️ Word Vault · <span id="wvStepLabel"></span></p>
-        <h2 class="prompt">Pick a word that means the same as <span class="target" id="wvTarget"></span></h2>
-        <p class="muted small">Two answers work. The rarer one is worth double.</p>
+        <p class="eyebrow">Word Vault · <span id="wvStepLabel"></span></p>
+        <h2 class="prompt">Type a Spanish synonym for</h2>
+
+        <div class="word-card">
+          <span class="word-card-word" id="wvTarget"></span>
+          <span class="word-card-meaning" id="wvTargetMeaning"></span>
+        </div>
+
+        <form class="answer-form" id="wvForm" autocomplete="off">
+          <input class="answer-input" id="wvInput" type="text" placeholder="Type a word…"
+                 autocapitalize="off" autocorrect="off" spellcheck="false" aria-label="Your synonym">
+          <button class="btn" id="wvCheck" type="submit">Check</button>
+        </form>
+
+        <div class="answer-meta">
+          <div class="rarity-legend">
+            <span class="tag common">Common +100</span>
+            <span class="tag uncommon">Uncommon +150</span>
+            <span class="tag rare">Rare +250</span>
+          </div>
+          <button class="link-btn" id="wvHint" type="button">Show a hint</button>
+        </div>
+        <p class="hint-line" id="wvHintLine" hidden></p>
 
         <div class="chain" id="wvChain" aria-label="Your synonym chain"></div>
-        <div class="options" id="wvOptions"></div>
-
         <p class="score-line">Score <b id="wvScore">0</b></p>
       </div>
 
-      <!-- Feedback sheet slides up after every choice -->
+      <!-- Feedback sheet slides up after every answer -->
       <div class="sheet" id="sheet" hidden>
         <div class="sheet-inner">
           <div class="sheet-head">
@@ -103,11 +115,11 @@
       <div class="game-head">
         <button class="close-btn" data-home aria-label="Back to hub">✕</button>
         <div class="progress"><div class="progress-fill purple" id="hcProgress"></div></div>
-        <span class="max-reward" id="hcMax" title="Most gems you can still earn this round">💎 60</span>
+        <span class="pill-stat max-reward" id="hcMax" title="Most gems you can still earn this round"></span>
       </div>
 
       <div class="game-body">
-        <p class="eyebrow">🧩 Hidden Connections</p>
+        <p class="eyebrow">Hidden Connections</p>
         <h2 class="prompt">Find four groups of four</h2>
 
         <div class="solved" id="hcSolved"></div>
@@ -121,7 +133,7 @@
         </div>
 
         <div class="controls">
-          <button class="btn btn-ghost" id="hcHint">💡 Hint <small>−15 💎</small></button>
+          <button class="btn btn-ghost" id="hcHint">Hint <small>−15 max</small></button>
           <button class="btn btn-ghost" id="hcShuffle">Shuffle</button>
           <button class="btn btn-ghost" id="hcClear">Deselect</button>
           <button class="btn" id="hcSubmit">Check</button>
@@ -141,13 +153,13 @@
         </div>
         <h1 id="resTitle"></h1>
         <p class="muted" id="resSubtitle"></p>
-        <p class="badge-new" id="resNewBest" hidden>🏆 New daily best!</p>
+        <p class="badge-new" id="resNewBest" hidden>New daily best</p>
       </div>
 
       <div class="stat-tiles">
         <div class="tile tile-score"><span class="tile-label">Score</span><b id="resScore">0</b></div>
-        <div class="tile tile-gems"><span class="tile-label">Gems</span><b>💎 <span id="resGems">0</span></b></div>
-        <div class="tile tile-streak"><span class="tile-label">Streak</span><b>🔥 <span id="resStreak">0</span></b></div>
+        <div class="tile tile-gems"><span class="tile-label">Gems</span><b><i class="ico-gem"></i><span id="resGems">0</span></b></div>
+        <div class="tile tile-streak"><span class="tile-label">Streak</span><b><i class="ico-flame"></i><span id="resStreak">0</span></b></div>
       </div>
 
       <div class="panel">

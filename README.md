@@ -1,4 +1,4 @@
-# DuoDuel ⚔️
+# DuoDuel
 
 A playable browser prototype for a Duolingo case competition: two quick Spanish word games that each earn **personal gems** and fill a **shared squad gem chest**.
 
@@ -12,21 +12,21 @@ All players, squads and scores are **demo data**. There is no login, backend, da
 
 ## The two games
 
-**🗝️ Word Vault** builds a four-step synonym chain that starts from *feliz*. Each step offers a common synonym (100 pts), a rarer synonym (200 pts) and one wrong word. Every consecutive first-try correct answer adds a combo bonus (+50, +100, +150). A wrong pick explains why and lets you retry. It resets the combo but never takes away points.
+**Word Vault** shows a Spanish word and the player *types* a synonym. The chain starts at *feliz*, and each correct answer becomes the next prompt, four times in a row. Every accepted answer is curated in `game.js` with a rarity: common (100 pts), uncommon (150) or rare (250). Every correct answer in a row adds a combo bonus (+50, +100, +150). Accents are optional and feminine or plural forms count (*contenta*, *alegres*). Common wrong guesses like *triste* or *sensible* get a short explanation. A wrong answer lets you retry without losing points but resets the combo. A hint shows the first letter of an unused word and also resets the combo.
 
-**🧩 Hidden Connections** asks you to sort 16 Spanish words into 4 hidden groups (Animals, Fruits, Colors, False friends). Each solved group is worth 100 pts. If you finish, each unused mistake (4 allowed) adds +50. The hint shows one category and one word in it, and lowers the maximum reward by 150 pts. The live **💎 max** badge shows the best you can still earn.
+**Hidden Connections** asks you to sort 16 Spanish words into 4 hidden groups (Animals, Fruits, Colors, False friends). Each solved group is worth 100 pts. If you finish, each unused mistake (4 allowed) adds +50. The hint shows one category and one word in it, and lowers the maximum reward by 150 pts. The live **💎 max** badge shows the best you can still earn.
 
 **Gems:** 10 points = 1 gem. Gems go to your personal total *and* the squad chest.
 
 **Saved in localStorage:** personal gems, this week's squad contribution, day streak, and today's best score per game. Replays count as practice, so nothing is wiped. Use *Reset demo progress* on the hub to start a demo fresh.
 
-**Demo shortcuts:** in Word Vault, press `1`–`3` to pick and `Enter` to continue. In Hidden Connections, `Enter` checks the selected words.
+**Demo shortcuts:** `Enter` submits a word or continues in Word Vault, and checks the selected words in Hidden Connections.
 
 ## Where to change things
 
-- Words, meanings and example sentences: `WORD_VAULT` at the top of `game.js`
+- Accepted synonyms, rarity, meanings, example sentences and explained wrong guesses: `WORD_VAULT` at the top of `game.js`
 - Categories and words: `CONNECTIONS`
-- Point values: `pointsByRarity`, `comboStep`, `pointsPerGroup`, `pointsPerSpareMistake`, `hintCost`, `POINTS_PER_GEM`
+- Point values: `points`, `comboStep`, `pointsPerGroup`, `pointsPerSpareMistake`, `hintCost`, `POINTS_PER_GEM`
 - Teammates, rival squads, chest goal: `SQUAD`
 
 ## Preview locally
@@ -48,4 +48,4 @@ Then visit http://localhost:8000.
 
 ---
 
-Student prototype for a case competition. Not an official Duolingo product. Illustrations are emoji and simple CSS shapes.
+Student prototype for a case competition. Not an official Duolingo product. Icons and the chest are simple CSS shapes.

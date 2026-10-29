@@ -3,7 +3,7 @@
 /* ==========================================================================
    DuoDuel — game logic + curated sample data
    --------------------------------------------------------------------------
-   1. Curated data   (Word Vault chain, Hidden Connections groups, demo squad)
+   1. Curated data   (Word Vault synonyms, Hidden Connections groups, demo squad)
    2. Saved progress (localStorage: gems, streak, daily best, squad gems)
    3. Small helpers  (screens, shuffle, animations)
    4. Hub + squad
@@ -19,50 +19,53 @@
 const POINTS_PER_GEM = 10;
 
 // WORD VAULT
-// Each step has three choices: a common synonym, a rarer synonym, and a wrong word.
-// Both valid choices lead into the same next step, so the chain always stays on track.
+// The player types a synonym for the current word. Every word below is a synonym of
+// "feliz", so any unused one is accepted at any step. Rarer words score more.
+// Accents are optional and feminine/plural forms count (contenta, alegres...).
 const WORD_VAULT = {
   start: "feliz",
-  pointsByRarity: { common: 100, rare: 200 }, // rarer valid word = double points
-  comboStep: 50, // each consecutive first-try correct answer adds +50 more
-  steps: [
-    {
-      options: [
-        { word: "contento", valid: true, rarity: "common", meaning: "pleased, content",
-          example: "Estoy contento con mi nota. — I'm pleased with my grade." },
-        { word: "dichoso", valid: true, rarity: "rare", meaning: "blissful, fortunate",
-          example: "¡Qué día tan dichoso! — What a blissful day!" },
-        { word: "triste", valid: false, why: "“Triste” means sad — the exact opposite of feliz." },
-      ],
-    },
-    {
-      options: [
-        { word: "alegre", valid: true, rarity: "common", meaning: "cheerful, joyful",
-          example: "Mi abuela siempre está alegre. — My grandma is always cheerful." },
-        { word: "jubiloso", valid: true, rarity: "rare", meaning: "jubilant, full of joy",
-          example: "El equipo jubiloso celebró la victoria. — The jubilant team celebrated the win." },
-        { word: "molesto", valid: false, why: "Sneaky one! “Molesto” means annoyed or bothered." },
-      ],
-    },
-    {
-      options: [
-        { word: "radiante", valid: true, rarity: "common", meaning: "radiant, beaming",
-          example: "Llegó radiante a la fiesta. — She arrived at the party beaming." },
-        { word: "risueño", valid: true, rarity: "rare", meaning: "smiley, always smiling",
-          example: "Es un niño muy risueño. — He's a very smiley kid." },
-        { word: "sensible", valid: false, why: "False friend! “Sensible” means sensitive, not happy (or sensible)." },
-      ],
-    },
-    {
-      options: [
-        { word: "eufórico", valid: true, rarity: "common", meaning: "euphoric, over the moon",
-          example: "Después del gol, todos estaban eufóricos. — After the goal, everyone was over the moon." },
-        { word: "exultante", valid: true, rarity: "rare", meaning: "exultant, bursting with joy",
-          example: "Salió exultante del examen. — She left the exam bursting with joy." },
-        { word: "cansado", valid: false, why: "“Cansado” means tired. Happy-tired, maybe — but not a synonym." },
-      ],
-    },
-  ],
+  steps: 4,
+  points: { common: 100, uncommon: 150, rare: 250 },
+  comboStep: 50, // each correct answer in a row adds +50 more
+  words: {
+    feliz:      { rarity: "common",   meaning: "happy",
+                  example: "Hoy estoy muy feliz. — I'm really happy today." },
+    contento:   { rarity: "common",   meaning: "pleased, content",
+                  example: "Estoy contento con mi nota. — I'm pleased with my grade." },
+    alegre:     { rarity: "common",   meaning: "cheerful, joyful",
+                  example: "Mi abuela siempre está alegre. — My grandma is always cheerful." },
+    encantado:  { rarity: "common",   meaning: "delighted",
+                  example: "Estoy encantado con el regalo. — I'm delighted with the gift." },
+    dichoso:    { rarity: "uncommon", meaning: "blissful, fortunate",
+                  example: "¡Qué día tan dichoso! — What a blissful day!" },
+    radiante:   { rarity: "uncommon", meaning: "radiant, beaming",
+                  example: "Llegó radiante a la fiesta. — She arrived at the party beaming." },
+    eufórico:   { rarity: "uncommon", meaning: "euphoric, over the moon",
+                  example: "Después del gol, todos estaban eufóricos. — After the goal, everyone was over the moon." },
+    animado:    { rarity: "uncommon", meaning: "upbeat, in good spirits",
+                  example: "El grupo está muy animado hoy. — The group is really upbeat today." },
+    jubiloso:   { rarity: "rare",     meaning: "jubilant",
+                  example: "El equipo jubiloso celebró la victoria. — The jubilant team celebrated the win." },
+    exultante:  { rarity: "rare",     meaning: "exultant, bursting with joy",
+                  example: "Salió exultante del examen. — She left the exam bursting with joy." },
+    risueño:    { rarity: "rare",     meaning: "smiley, always smiling",
+                  example: "Es un niño muy risueño. — He's a very smiley kid." },
+    gozoso:     { rarity: "rare",     meaning: "joyful, full of delight",
+                  example: "Fue un reencuentro gozoso. — It was a joyful reunion." },
+    alborozado: { rarity: "rare",     meaning: "elated, overjoyed",
+                  example: "El público estaba alborozado. — The crowd was elated." },
+  },
+  // Common wrong guesses get a short explanation instead of a generic "try again".
+  nearMisses: {
+    triste:   "“Triste” means sad — the exact opposite.",
+    molesto:  "Sneaky one! “Molesto” means annoyed or bothered.",
+    enojado:  "“Enojado” means angry. Not quite the vibe.",
+    sensible: "False friend! “Sensible” means sensitive, not happy.",
+    cansado:  "“Cansado” means tired. Happy-tired maybe, but not a synonym.",
+    tranquilo:"“Tranquilo” means calm. Close in mood, but not happy.",
+    bueno:    "“Bueno” means good. Think about a feeling, not a quality.",
+    happy:    "Right idea, wrong language! Try it in Spanish.",
+  },
 };
 
 // HIDDEN CONNECTIONS
@@ -70,9 +73,9 @@ const WORD_VAULT = {
 // "naranja" looks like a fruit, "rosa" like a flower, "ratón" like office gear.
 const CONNECTIONS = {
   maxMistakes: 4,
-  pointsPerGroup: 100,      // 4 groups = 400
+  pointsPerGroup: 100,       // 4 groups = 400
   pointsPerSpareMistake: 50, // unused mistakes are a bonus when you win (up to +200)
-  hintCost: 150,            // using the hint lowers the max reward by 150 points (15 gems)
+  hintCost: 150,             // using the hint lowers the max reward by 150 points (15 gems)
   groups: [
     { name: "Animals", color: "yellow", words: ["gato", "perro", "ratón", "conejo"],
       explain: "cat, dog, mouse, rabbit. Ratón is also a computer mouse." },
@@ -90,9 +93,9 @@ const SQUAD = {
   name: "Las Palabras Locas",
   chestGoal: 600,
   teammates: [
-    { name: "Mateo", avatar: "🦊", gems: 180 },
-    { name: "Aisha", avatar: "🐼", gems: 140 },
-    { name: "Lena", avatar: "🐙", gems: 95 },
+    { name: "Mateo", color: "#ff9600", gems: 180 },
+    { name: "Aisha", color: "#ce82ff", gems: 140 },
+    { name: "Lena", color: "#ff4b4b", gems: 95 },
   ],
   rivals: [
     { name: "Team Tortilla", gems: 610 },
@@ -106,6 +109,9 @@ const GAMES = {
   wordVault: { name: "Word Vault", start: () => startWordVault() },
   connections: { name: "Hidden Connections", start: () => startConnections() },
 };
+
+// Small inline icons (drawn in CSS) so the UI doesn't depend on emoji.
+const GEM = `<i class="ico-gem"></i>`;
 
 
 /* ---------- 2. SAVED PROGRESS (localStorage) ---------- */
@@ -195,6 +201,10 @@ function shuffle(list) {
   return a;
 }
 
+function escapeHTML(text) {
+  return text.replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[c]);
+}
+
 // Re-trigger a CSS animation class (e.g. "shake") even if it ran before.
 function replayAnimation(el, cls) {
   el.classList.remove(cls);
@@ -241,11 +251,11 @@ function renderHub() {
 
   const playedToday = state.lastPlayed === today();
   $("#streakNote").textContent =
-    state.streak === 0 ? "Finish any game to start a streak. Each one takes under a minute."
-    : playedToday ? `🔥 ${state.streak}-day streak is safe today. Go for a new best?`
-    : `Play one game to keep your 🔥 ${state.streak}-day streak alive.`;
+    state.streak === 0 ? "Each game takes under a minute. Finish one to start a streak."
+    : playedToday ? `Your ${state.streak}-day streak is safe today. Go for a new best?`
+    : `Play one game to keep your ${state.streak}-day streak alive.`;
 
-  const bestText = (score) => (score ? `🏆 Today's best: ${score}` : "Not played yet today");
+  const bestText = (score) => (score ? `Today's best: ${score}` : "Not played yet today");
   $("#bestWordVault").textContent = bestText(state.best.wordVault);
   $("#bestConnections").textContent = bestText(state.best.connections);
 
@@ -258,23 +268,20 @@ function renderSquad() {
   const total = squadTotal();
   const pct = Math.min(100, (total / SQUAD.chestGoal) * 100);
 
-  const members = [{ name: "You", avatar: "🦉", gems: state.squadGems, you: true }, ...SQUAD.teammates]
+  const members = [{ name: "You", color: "#1cb0f6", gems: state.squadGems, you: true }, ...SQUAD.teammates]
     .sort((a, b) => b.gems - a.gems);
-  const topGems = Math.max(...members.map((m) => m.gems), 1);
 
   const league = [...SQUAD.rivals, { name: SQUAD.name, gems: total, you: true }]
     .sort((a, b) => b.gems - a.gems);
-  const medals = ["🥇", "🥈", "🥉"];
 
   $("#squadPanel").innerHTML = `
     <div class="panel-head">
-      <h3>👥 ${SQUAD.name} <span class="demo-tag">demo</span></h3>
+      <h3>${SQUAD.name} <span class="demo-tag">demo</span></h3>
       <span class="muted small">Weekly squad chest</span>
     </div>
     <div class="chest-row">
-      <span class="chest-mini" aria-hidden="true">${total >= SQUAD.chestGoal ? "🎉" : "🧰"}</span>
       <div class="progress big"><div class="progress-fill gold" style="width:${pct}%"></div></div>
-      <b class="chest-count">${total}/${SQUAD.chestGoal} 💎</b>
+      <b class="chest-count">${total} / ${SQUAD.chestGoal} ${GEM}</b>
     </div>
     <p class="muted small">${total >= SQUAD.chestGoal
       ? "Chest full! Everyone gets the bonus when the week ends."
@@ -282,25 +289,24 @@ function renderSquad() {
 
     <div class="squad-cols">
       <div>
-        <h4>Squad members</h4>
+        <h4>Members</h4>
         <ul class="members">
           ${members.map((m) => `
             <li class="${m.you ? "is-you" : ""}">
-              <span class="avatar">${m.avatar}</span>
+              <span class="avatar" style="background:${m.color}">${m.name[0]}</span>
               <span class="member-name">${m.name}</span>
-              <span class="member-bar"><span style="width:${(m.gems / topGems) * 100}%"></span></span>
               <b>${m.gems}</b>
             </li>`).join("")}
         </ul>
       </div>
       <div>
-        <h4>Squad League · this week</h4>
+        <h4>Squad League</h4>
         <ol class="league">
           ${league.map((s, i) => `
             <li class="${s.you ? "is-you" : ""}">
-              <span class="rank">${medals[i] || i + 1}</span>
-              <span class="member-name">${s.name}${s.you ? " (you)" : ""}</span>
-              <b>${s.gems} 💎</b>
+              <span class="rank rank-${i + 1}">${i + 1}</span>
+              <span class="member-name">${s.name}</span>
+              <b>${s.gems}</b>
             </li>`).join("")}
         </ol>
       </div>
@@ -318,18 +324,33 @@ function goHome() {
 
 /* ---------- 5. GAME 1: WORD VAULT ---------- */
 
+// Compare words without accents, capitals or punctuation: "Eufórico" → "euforico".
+const normalize = (text) =>
+  text.toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g, "").replace(/[^a-z]/g, "");
+
+// Lookup tables from normalized spelling → the curated word.
+const WORD_LOOKUP = Object.fromEntries(Object.keys(WORD_VAULT.words).map((w) => [normalize(w), w]));
+const MISS_LOOKUP = Object.fromEntries(Object.keys(WORD_VAULT.nearMisses).map((w) => [normalize(w), w]));
+
+// Also accept feminine and plural forms: contenta, alegres, dichosas...
+function findIn(lookup, typed) {
+  const n = normalize(typed);
+  const forms = [n, n.replace(/s$/, ""), n.replace(/es$/, ""), n.replace(/as?$/, "o"), n.replace(/os$/, "o")];
+  const hit = forms.find((f) => lookup[f]);
+  return hit ? lookup[hit] : null;
+}
+
 const wv = {}; // current round
 
 function startWordVault() {
   Object.assign(wv, {
     step: 0,
-    chain: [{ word: WORD_VAULT.start, rarity: "start" }],
-    order: WORD_VAULT.steps.map((s) => shuffle(s.options)), // shuffle once; retries keep order
+    chain: [WORD_VAULT.start],
     score: 0,
     combo: 0,
     bestCombo: 0,
-    rareFinds: 0,
     retries: 0,
+    hints: 0,
     answered: false,
   });
   hideSheet();
@@ -337,94 +358,132 @@ function startWordVault() {
   renderWordVault();
 }
 
+const currentWord = () => wv.chain[wv.chain.length - 1];
+
 function renderWordVault() {
-  const total = WORD_VAULT.steps.length;
-  setProgress($("#wvProgress"), wv.step / total);
-  $("#wvStepLabel").textContent = `Step ${wv.step + 1} of ${total}`;
-  $("#wvTarget").textContent = wv.chain[wv.chain.length - 1].word;
+  const word = currentWord();
+  setProgress($("#wvProgress"), wv.step / WORD_VAULT.steps);
+  $("#wvStepLabel").textContent = `${wv.step + 1} of ${WORD_VAULT.steps}`;
+  $("#wvTarget").textContent = word;
+  $("#wvTargetMeaning").textContent = WORD_VAULT.words[word].meaning;
   $("#wvScore").textContent = wv.score;
+  $("#wvHintLine").hidden = true;
+  $("#wvHint").disabled = false;
+
+  const input = $("#wvInput");
+  input.value = "";
+  input.disabled = false;
+  input.className = "answer-input";
+  $("#wvCheck").disabled = false;
+  input.focus({ preventScroll: true });
+
   renderCombo();
   renderChain();
-
-  const box = $("#wvOptions");
-  box.innerHTML = "";
-  wv.order[wv.step].forEach((opt, i) => {
-    const btn = document.createElement("button");
-    btn.className = "option";
-    btn.innerHTML = `<span class="option-key">${i + 1}</span><span class="option-word">${opt.word}</span>`;
-    btn.addEventListener("click", () => chooseWord(opt, btn));
-    box.append(btn);
-  });
 }
 
 function renderChain(popLast = false) {
-  const el = $("#wvChain");
-  const total = WORD_VAULT.steps.length;
-  const links = wv.chain.map((link, i) => {
+  const links = wv.chain.map((word, i) => {
+    const rarity = i === 0 ? "start" : WORD_VAULT.words[word].rarity;
     const pop = popLast && i === wv.chain.length - 1 ? " pop" : "";
-    return `<span class="chip ${link.rarity}${pop}">${link.word}${link.rarity === "rare" ? " 💎" : ""}</span>`;
+    return `<span class="chip ${rarity}${pop}">${word}</span>`;
   });
-  for (let i = wv.chain.length; i <= total; i++) links.push(`<span class="chip empty">?</span>`);
-  el.innerHTML = links.join(`<span class="arrow" aria-hidden="true">→</span>`);
+  for (let i = wv.chain.length; i <= WORD_VAULT.steps; i++) links.push(`<span class="chip empty">?</span>`);
+  $("#wvChain").innerHTML = links.join(`<span class="arrow" aria-hidden="true">→</span>`);
 }
 
 function renderCombo() {
   const el = $("#wvCombo");
-  el.textContent = `🔥 Combo ×${wv.combo}`;
+  el.textContent = `Combo ${wv.combo}x`;
   el.classList.toggle("is-hot", wv.combo >= 2);
 }
 
-function chooseWord(opt, btn) {
-  if (wv.answered || btn.disabled) return;
+function submitWord(event) {
+  event.preventDefault();
+  if (wv.answered) return;
 
-  // Wrong: explain, keep earned points, let them retry. Combo resets.
-  if (!opt.valid) {
-    wv.combo = 0;
-    wv.retries++;
-    btn.classList.add("is-wrong");
-    btn.disabled = true;
-    replayAnimation(btn, "shake");
-    renderCombo();
+  const input = $("#wvInput");
+  const typed = input.value.trim();
+  if (!typed) { replayAnimation(input, "shake"); input.focus(); return; }
+
+  const match = findIn(WORD_LOOKUP, typed);
+  input.blur(); // closes the phone keyboard so the feedback is visible
+
+  // Already used: a gentle nudge, no penalty.
+  if (match && wv.chain.includes(match)) {
     showSheet({
       kind: "wrong",
-      title: "Not quite",
-      body: opt.why,
-      example: "Your points are safe. Pick again!",
+      title: "Already in your chain",
+      body: `You've used <b>${match}</b>. Find a new word.`,
       button: "Try again",
-      onNext: hideSheet,
+      onNext: retryWord,
     });
     return;
   }
 
-  // Correct: points for rarity + combo bonus.
+  if (match) { acceptWord(match); return; }
+
+  // Wrong: explain, keep earned points, let them retry. Combo resets.
+  wv.combo = 0;
+  wv.retries++;
+  renderCombo();
+  input.classList.add("is-wrong");
+  replayAnimation(input, "shake");
+
+  const miss = findIn(MISS_LOOKUP, typed);
+  showSheet({
+    kind: "wrong",
+    title: "Not quite",
+    body: miss
+      ? WORD_VAULT.nearMisses[miss]
+      : `“${escapeHTML(typed)}” isn't on our list of synonyms for <b>${currentWord()}</b>. Check the spelling or try another word.`,
+    example: "Your points are safe.",
+    button: "Try again",
+    onNext: retryWord,
+  });
+}
+
+function retryWord() {
+  hideSheet();
+  const input = $("#wvInput");
+  input.classList.remove("is-wrong");
+  input.select();
+  input.focus();
+}
+
+function acceptWord(word) {
+  const info = WORD_VAULT.words[word];
   wv.answered = true;
   wv.combo++;
   wv.bestCombo = Math.max(wv.bestCombo, wv.combo);
-  if (opt.rarity === "rare") wv.rareFinds++;
 
-  const base = WORD_VAULT.pointsByRarity[opt.rarity];
+  const base = WORD_VAULT.points[info.rarity];
   const bonus = WORD_VAULT.comboStep * (wv.combo - 1);
   const oldScore = wv.score;
   wv.score += base + bonus;
-  wv.chain.push({ word: opt.word, rarity: opt.rarity });
+  wv.chain.push(word);
 
-  document.querySelectorAll("#wvOptions .option").forEach((b) => { b.disabled = true; });
-  btn.disabled = false;
-  btn.classList.add("is-correct");
-  floatText(`+${base + bonus}`, btn, opt.rarity === "rare" ? "rare" : "");
+  const input = $("#wvInput");
+  input.value = word;
+  input.disabled = true;
+  input.className = `answer-input is-right ${info.rarity}`;
+  $("#wvCheck").disabled = true;
+  $("#wvHint").disabled = true;
+
+  floatText(`+${base + bonus}`, input, info.rarity);
   countUp($("#wvScore"), oldScore, wv.score, 500);
-  setProgress($("#wvProgress"), (wv.step + 1) / WORD_VAULT.steps.length);
+  setProgress($("#wvProgress"), (wv.step + 1) / WORD_VAULT.steps);
   renderChain(true);
   renderCombo();
   if (wv.combo >= 2) replayAnimation($("#wvCombo"), "bump");
 
-  const isLast = wv.step === WORD_VAULT.steps.length - 1;
+  const titles = { common: "Nice!", uncommon: "Ooh, uncommon!", rare: "Rare find!" };
+  const isLast = wv.step === WORD_VAULT.steps - 1;
   showSheet({
     kind: "right",
-    title: opt.rarity === "rare" ? "Rare find!" : "¡Exacto!",
+    title: titles[info.rarity],
     points: `+${base}${bonus ? ` · +${bonus} combo` : ""}`,
-    body: `<b>${opt.word}</b> — ${opt.meaning}`,
-    example: opt.example,
+    body: `<b>${word}</b> — ${info.meaning}`,
+    example: info.example,
     button: isLast ? "Open the vault" : "Continue",
     onNext: nextWordStep,
   });
@@ -434,28 +493,54 @@ function nextWordStep() {
   hideSheet();
   wv.step++;
   wv.answered = false;
-  if (wv.step >= WORD_VAULT.steps.length) finishWordVault();
+  if (wv.step >= WORD_VAULT.steps) finishWordVault();
   else renderWordVault();
 }
 
+// Hint: first letter + length of an unused word (common ones first). Costs your combo.
+function showWordHint() {
+  if (wv.answered) return;
+  const order = ["common", "uncommon", "rare"];
+  const options = Object.entries(WORD_VAULT.words)
+    .filter(([w]) => !wv.chain.includes(w))
+    .sort((a, b) => order.indexOf(a[1].rarity) - order.indexOf(b[1].rarity));
+  const [word] = options[0];
+
+  wv.hints++;
+  wv.combo = 0;
+  renderCombo();
+  const blanks = word.slice(1).replace(/./g, " _");
+  const line = $("#wvHintLine");
+  line.innerHTML = `Try <b>${word[0]}${blanks}</b> (${word.length} letters). Hints reset your combo.`;
+  line.hidden = false;
+  $("#wvHint").disabled = true;
+  $("#wvInput").focus();
+}
+
 function finishWordVault() {
+  const picks = wv.chain.slice(1).map((w) => WORD_VAULT.words[w].rarity);
+  const rare = picks.filter((r) => r === "rare").length;
   const chainHTML = wv.chain
-    .map((l) => `<span class="chip ${l.rarity}">${l.word}${l.rarity === "rare" ? " 💎" : ""}</span>`)
+    .map((w, i) => `<span class="chip ${i === 0 ? "start" : WORD_VAULT.words[w].rarity}">${w}</span>`)
     .join(`<span class="arrow">→</span>`);
+  const unusedRare = Object.keys(WORD_VAULT.words)
+    .filter((w) => WORD_VAULT.words[w].rarity === "rare" && !wv.chain.includes(w));
 
   showResults({
     game: "wordVault",
-    title: wv.rareFinds === 4 ? "Vault cracked. All rare words!" : "Vault cracked!",
-    subtitle: "From feliz to over the moon in four words.",
+    title: rare === WORD_VAULT.steps ? "Vault cracked. All rare words!" : "Vault cracked!",
+    subtitle: "Four synonyms, zero multiple choice.",
     score: wv.score,
     detail: `
       <h3>Your chain</h3>
       <div class="chain final">${chainHTML}</div>
       <ul class="facts">
-        <li><b>${wv.rareFinds}/4</b> rare finds</li>
-        <li><b>×${wv.bestCombo}</b> best combo</li>
+        <li><b>${rare}/${WORD_VAULT.steps}</b> rare words</li>
+        <li><b>${wv.bestCombo}x</b> best combo</li>
         <li><b>${wv.retries}</b> ${wv.retries === 1 ? "retry" : "retries"}</li>
-      </ul>`,
+        <li><b>${wv.hints}</b> ${wv.hints === 1 ? "hint" : "hints"}</li>
+      </ul>
+      ${unusedRare.length ? `<p class="muted small">Rare words to try next time: <b>${unusedRare.join(", ")}</b></p>` : ""}`,
   });
 }
 
@@ -533,16 +618,20 @@ function renderConnections() {
   renderStatus();
 }
 
+function groupBarHTML(gi, extra = "", label = "") {
+  const g = CONNECTIONS.groups[gi];
+  return `
+    <div class="group-bar ${g.color}${extra}">
+      <b>${g.name}${label}</b>
+      <span class="group-words">${g.words.join(" · ")}</span>
+      <span class="group-explain">${g.explain}</span>
+    </div>`;
+}
+
 function renderSolved(newGroup = -1) {
-  $("#hcSolved").innerHTML = hc.solved.map(({ group }) => {
-    const g = CONNECTIONS.groups[group];
-    return `
-      <div class="group-bar ${g.color}${group === newGroup ? " pop" : ""}">
-        <b>${g.name}</b>
-        <span class="group-words">${g.words.join(" · ")}</span>
-        <span class="group-explain">${g.explain}</span>
-      </div>`;
-  }).join("");
+  $("#hcSolved").innerHTML = hc.solved
+    .map(({ group }) => groupBarHTML(group, group === newGroup ? " pop" : ""))
+    .join("");
 }
 
 function renderGrid() {
@@ -565,7 +654,7 @@ function renderStatus() {
   const left = CONNECTIONS.maxMistakes - hc.mistakes;
   $("#hcDots").innerHTML = Array.from({ length: CONNECTIONS.maxMistakes },
     (_, i) => `<span class="dot${i < left ? "" : " used"}"></span>`).join("");
-  $("#hcMax").textContent = `💎 ${maxPossibleGems()} max`;
+  $("#hcMax").innerHTML = `${GEM} ${maxPossibleGems()} max`;
   setProgress($("#hcProgress"), hc.solved.length / CONNECTIONS.groups.length);
 
   $("#hcSubmit").disabled = hc.over || hc.selected.size !== 4;
@@ -626,7 +715,6 @@ function submitGroup() {
 
 function solveGroup(gi) {
   const g = CONNECTIONS.groups[gi];
-  const anchor = $("#hcGrid");
   hc.solved.push({ group: gi, byPlayer: true });
   hc.selected.clear();
   if (hc.hintWord && g.words.includes(hc.hintWord)) hc.hintWord = null;
@@ -634,7 +722,7 @@ function solveGroup(gi) {
   renderSolved(gi);
   renderGrid();
   renderStatus();
-  floatText(`+${CONNECTIONS.pointsPerGroup}`, anchor, "");
+  floatText(`+${CONNECTIONS.pointsPerGroup}`, $("#hcGrid"));
 
   if (hc.solved.length === CONNECTIONS.groups.length) {
     setMessage("All four groups found. ¡Increíble!", "good");
@@ -650,7 +738,7 @@ function useHint() {
   const g = CONNECTIONS.groups[gi];
   hc.hintUsed = true;
   hc.hintWord = g.words[0];
-  setMessage(`💡 One group is “${g.name}”, and “${hc.hintWord}” is in it. (Max reward −15 💎)`, "hint");
+  setMessage(`Hint: one group is “${g.name}”, and “${hc.hintWord}” is in it. Max reward −15.`, "hint");
   renderGrid();
   renderStatus();
   replayAnimation($("#hcMax"), "bump");
@@ -673,14 +761,9 @@ function endConnections(won) {
 
 function finishConnections(won) {
   const solvedByPlayer = hc.solved.filter((s) => s.byPlayer).length;
-  const bars = CONNECTIONS.groups.map((g, gi) => {
+  const bars = CONNECTIONS.groups.map((_, gi) => {
     const mine = hc.solved.find((s) => s.group === gi).byPlayer;
-    return `
-      <div class="group-bar ${g.color}">
-        <b>${g.name} ${mine ? "✓" : "<small>(revealed)</small>"}</b>
-        <span class="group-words">${g.words.join(" · ")}</span>
-        <span class="group-explain">${g.explain}</span>
-      </div>`;
+    return groupBarHTML(gi, "", mine ? " ✓" : " <small>(revealed)</small>");
   }).join("");
 
   showResults({
@@ -728,9 +811,9 @@ function showResults({ game, title, subtitle, score, detail }) {
   const bar = $("#resSquadBar");
   bar.style.transition = "none";
   setProgress(bar, Math.min(1, squadBefore / SQUAD.chestGoal));
-  $("#resSquadText").textContent = `${squadAfter}/${SQUAD.chestGoal} 💎`;
+  $("#resSquadText").textContent = `${squadAfter} / ${SQUAD.chestGoal}`;
   $("#resSquadNote").textContent = squadAfter >= SQUAD.chestGoal
-    ? `+${gems} from you. Chest full! 🎉 The squad bonus drops when the week ends.`
+    ? `+${gems} from you. Chest full! The squad bonus drops when the week ends.`
     : `+${gems} from you. ${SQUAD.chestGoal - squadAfter} more gems to unlock the squad chest.`;
 
   const other = game === "wordVault" ? "connections" : "wordVault";
@@ -756,9 +839,9 @@ function openChest(gems) {
   // A handful of gems fly out in a fan
   const count = Math.min(8, Math.max(3, Math.round(gems / 12)));
   for (let i = 0; i < count; i++) {
-    const s = document.createElement("span");
+    const s = document.createElement("i");
     const angle = (-150 + (120 / (count - 1)) * i) * (Math.PI / 180);
-    s.textContent = "💎";
+    s.className = "ico-gem";
     s.style.setProperty("--dx", `${Math.cos(angle) * 90}px`);
     s.style.setProperty("--dy", `${Math.sin(angle) * 80}px`);
     s.style.animationDelay = `${0.45 + i * 0.04}s`;
@@ -776,6 +859,10 @@ document.querySelectorAll("[data-home]").forEach((b) => b.addEventListener("clic
 document.querySelectorAll("[data-start]").forEach((b) =>
   b.addEventListener("click", () => GAMES[b.dataset.start].start()));
 
+$("#wvForm").addEventListener("submit", submitWord);
+$("#wvHint").addEventListener("click", showWordHint);
+// Tapping back into the box after a miss dismisses the "Not quite" sheet.
+$("#wvInput").addEventListener("focus", () => { if (!wv.answered && sheetAction) hideSheet(); });
 $("#sheetBtn").addEventListener("click", () => sheetAction && sheetAction());
 $("#hcSubmit").addEventListener("click", submitGroup);
 $("#hcHint").addEventListener("click", useHint);
@@ -796,14 +883,14 @@ $("#resetBtn").addEventListener("click", () => {
   renderHub();
 });
 
-// Keyboard shortcuts for live demos: 1–3 picks a word, Enter continues.
+// Enter continues past the feedback sheet (Word Vault) or checks a group (Connections).
 document.addEventListener("keydown", (e) => {
+  if (e.key !== "Enter") return;
   const screen = document.body.dataset.screen;
-  if (screen === "wordvault") {
-    if (e.key === "Enter" && sheetAction) { e.preventDefault(); sheetAction(); return; }
-    const n = Number(e.key);
-    if (n >= 1 && n <= 3) document.querySelectorAll("#wvOptions .option")[n - 1]?.click();
-  } else if (screen === "connections" && e.key === "Enter") {
+  if (screen === "wordvault" && sheetAction) {
+    e.preventDefault();
+    sheetAction();
+  } else if (screen === "connections") {
     e.preventDefault();
     submitGroup();
   }
